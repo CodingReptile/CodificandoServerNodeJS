@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2018
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "socketio", "socketio\socketio.njsproj", "{FD9EDB9B-796C-456A-8D2C-43CA6F9FA8C1}"
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "socketio", "socketio.njsproj", "{FD9EDB9B-796C-456A-8D2C-43CA6F9FA8C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
