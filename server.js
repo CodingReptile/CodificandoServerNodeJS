@@ -50,5 +50,16 @@ io.on('connection', function(socket) {
 });
 
 setInterval(function() {
-  io.sockets.emit('state', players);
+
+  var playersArray = [];
+  for( var player in players ){
+    var playerTemp = {
+      id: player,
+      x: players[player].x,
+      y: players[player].y
+    };
+    playersArray.push(playerTemp);
+  }
+
+  io.sockets.emit('state', playersArray);
 }, 1000 / 60);
