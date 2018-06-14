@@ -4,8 +4,8 @@ var path = require('path');
 var socketIO = require('socket.io');
 
 // Constants
-//const portNumber = process.env.port;
-const portNumber = 8888;
+const portNumber = process.env.port;
+//const portNumber = 8888;
 
 var app = express();
 var server = http.Server(app);
