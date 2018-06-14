@@ -4,8 +4,8 @@ var path = require('path');
 var socketIO = require('socket.io');
 
 // Constants
-const portNumber = process.env.port;
-//const portNumber = 8888;
+//const portNumber = process.env.port;
+const portNumber = 8888;
 
 var app = express();
 var server = http.Server(app);
@@ -26,7 +26,7 @@ server.listen(portNumber, function() {
 
 var players = {};
 io.on('connection', function(socket) {
-  console.log("Connection just happened");
+  console.log(socket.id + " connected");
   socket.on('new player', function() {
     players[socket.id] = {
       x: 300,
@@ -48,19 +48,14 @@ io.on('connection', function(socket) {
       player.y += 5;
     }
   });
+
+  socket.on('disconnecting', (reason) => {
+    console.log(socket.id + " is disconnecting: " + reason);
+    delete players[socket.id];
+  });  
 });
 
 setInterval(function() {
-
-  var playersArray = [];
-  for( var player in players ){
-    var playerTemp = {
-      id: player,
-      x: players[player].x,
-      y: players[player].y
-    };
-    playersArray.push(playerTemp);
-  }
-
-  io.sockets.emit('state', playersArray);
+  io.sockets.emit('state', players);
+  console.log(players);
 }, 1000 / 60);
