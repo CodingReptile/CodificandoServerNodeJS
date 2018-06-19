@@ -9,7 +9,7 @@ var movement = {
     down: false,
     left: false,
     right: false
-  }
+};
   document.addEventListener('keydown', function(event) {
     switch (event.keyCode) {
       case 65: // A
@@ -48,6 +48,21 @@ setInterval(function() {
   socket.emit('movement', movement);
 }, 1000 / 60);
 
+var incomingMessagesCountSec = 0;
+var incomingMessagesCount5Secs = 0;
+var intervalCounter = 0;
+setInterval(function () {
+  document.getElementById('framesPerSec').innerHTML = "frames/sec = " + incomingMessagesCountSec;
+  intervalCounter++;
+  incomingMessagesCount5Secs += incomingMessagesCountSec;
+  incomingMessagesCountSec = 0;
+  if (intervalCounter == 5) {
+    document.getElementById('framesAvg5Secs').innerHTML = "avg/5secs = " + incomingMessagesCount5Secs / 5;
+    incomingMessagesCount5Secs = 0;
+    intervalCounter = 0;
+  }
+}, 1000);
+
 var canvas = document.getElementById('canvas');
 canvas.width = 800;
 canvas.height = 600;
@@ -55,7 +70,7 @@ var context = canvas.getContext('2d');
 socket.on('state', function(players) {
   context.clearRect(0, 0, 800, 600);
   context.fillStyle = 'green';
-
+  incomingMessagesCountSec++;
   for (var id in players) {
     var player = players[id];
     context.beginPath();
