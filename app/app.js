@@ -35,22 +35,43 @@ io.on('connection', function(socket) {
   socket.on('new player', function() {
     players[socket.id] = {
       x: 300,
-      y: 300
+      y: 300,
+      r: 0 // rotation - 0 to 360
     };
   });
-  socket.on('movement', function(data) {
+  socket.on('movement', function (data) {
+    // TODO: create a world class - contains the state of the world, including all players, ring size, etc.
+    // TODO: create a gameObject class
+    // TODO: create a player class derived from gameObject
+    const playerSpeed = 5;
     var player = players[socket.id] || {};
+    // Update rotation first
     if (data.left) {
-      player.x -= 5;
-    }
-    if (data.up) {
-      player.y -= 5;
+      player.r -= 5;
+      if (player.r < 0) {
+        player.r += 360;
+      }
     }
     if (data.right) {
-      player.x += 5;
+      player.r += 5;
+      if (player.r + 5 > 360) {
+        player.r -= 360;
+      }
+    }
+
+    // update position later
+    if (data.up) {
+      // Why 90 - player.r? When the player's rotation angle is 0, the player is pointing to the top so the angle starts at the vertical axis.
+      // However the math formula to calculate x and y around a circle (i.e. x = radius * cos(angle)) consider the angle to start at the horizontal axis.
+      // Hence we need to calculate 90 - player.rotation to obtain the complementary angle as if we were rotating starting from the horizontal axis.
+      const rad = (90 - player.r) * Math.PI / 180;
+      player.y -= playerSpeed * Math.sin(rad);
+      player.x += playerSpeed * Math.cos(rad);
     }
     if (data.down) {
-      player.y += 5;
+      const rad = (270 - player.r) * Math.PI / 180;
+      player.y -= playerSpeed * Math.sin(rad);
+      player.x += playerSpeed * Math.cos(rad);
     }
   });
 

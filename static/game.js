@@ -64,17 +64,38 @@ setInterval(function () {
 }, 1000);
 
 var canvas = document.getElementById('canvas');
-canvas.width = 800;
-canvas.height = 600;
+const width = 800;
+const height = 600; 
+canvas.width = width;
+canvas.height = height;
 var context = canvas.getContext('2d');
-socket.on('state', function(players) {
-  context.clearRect(0, 0, 800, 600);
-  context.fillStyle = 'green';
+socket.on('state', function (players) {
+  const radius = 10;
+  context.clearRect(0, 0, width, height);
+
   incomingMessagesCountSec++;
+  context.fillStyle = 'green';
+  context.strokeStyle = 'red';
   for (var id in players) {
     var player = players[id];
+    //Set the origin to the center of the image
+    context.translate(player.x, player.y);
+    //Rotate the canvas around the origin
+    const radRotation = player.r * Math.PI / 180;
+    context.rotate(radRotation);
+
     context.beginPath();
-    context.arc(player.x, player.y, 10, 0, 2 * Math.PI);
+    // Yes, we draw the player at the origin (0, 0) because we have translated the context
+    context.arc(0, 0, radius, 0, 2 * Math.PI);
     context.fill();
+
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.lineTo(0, 0 - radius * 2);
+    context.stroke();
+
+    //reset the canvas  
+    context.rotate(radRotation * (-1));
+    context.translate(player.x * (-1), player.y * (-1));
   }
 });
