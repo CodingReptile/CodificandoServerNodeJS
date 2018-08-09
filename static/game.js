@@ -69,6 +69,7 @@ const height = 600;
 canvas.width = width;
 canvas.height = height;
 var context = canvas.getContext('2d');
+
 socket.on('state', function (players) {
   const radius = 10;
   context.clearRect(0, 0, width, height);

@@ -19,11 +19,6 @@ app.get('/', function(request, response)
     response.sendFile(path.join(configuration.Configuration.StaticResourcesPath, "index.html"));
 });
 
-// Set routing for model apis
-var gameController = require('../controller/gameController')
-app.use(gameController.apiName, gameController.router);
-
-
 server.listen(configuration.Configuration.ListeningPort, function() {
     console.log('Started listening on port: ' + configuration.Configuration.ListeningPort);
 });

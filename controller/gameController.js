@@ -6,15 +6,19 @@ var _ = require('underscore');
 var Enumerable = require('linq');
 
 function checkConditionForGame(game, name, query) {
+    
+    var doesItMatchGameName = (name) ? game.name === name : true;
+    var isQueryPresent = ((query) && !_.isEmpty(query));
+    var isLookingForAvailableGames = !(_.isUndefined(query.available));
+
     var check = 
-        ((name) ? game.name === name : true) &&
-        (((query) && !_.isEmpty(query)) ? (
-            (!(_.isUndefined(query.available)) ? 
-                (query.available === game.canAddNewPlayer()) : 
+        doesItMatchGameName &&
+        (isQueryPresent ? 
+            (isLookingForAvailableGames ? 
+                query.available === game.canAddNewPlayer : 
                 true)
-        ) : (
-            true
-        ));
+            : true)
+        ;
     
     return check;
 }
@@ -47,18 +51,20 @@ function lookupGame(req, res, next) {
         return res.json({ errors: ['Game not found'] });
     }
     
-    // By attaching the games 
-    req._games = games;
+    var result = {}
+
+    // By attaching the games
+    req._games = games
     next();
 }
 
-const router = express.Router();
-router.get('/', lookupGame, function(req, res) { res.statusCode = 200; res.json(req._games); });
-router.get('/:name', lookupGame, function(req, res) { res.statusCode = 200; res.json(req._games); });
+// Custom router
+var expressApp = express();
+expressApp.set("json replacer", ["name", "maxNumberOfPlayers", "players", "state"])
+expressApp.get('/', lookupGame, function(req, res) { res.statusCode = 200; res.json(req._games); });
+expressApp.get('/:name', lookupGame, function(req, res) { res.statusCode = 200; res.json(req._games); });
 
 const apiName = '/game'
 
-module.exports = {
-    router,
-    apiName
-}
+// Set routing for model apis
+app.app.use(apiName, expressApp);

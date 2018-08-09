@@ -1,4 +1,4 @@
-var app = require('../app/app');        // All the app, server and network initialization is on this module
+var app = require('../app/app');       // All the app, server and network initialization is on this module
 var config = require('../config/configuration');
 var crypto = require('crypto');
 var _ = require('underscore');
@@ -54,11 +54,40 @@ class Game {
      * @param {Player} player Checks for the player's id and name
      */
     isValidPlayer(player) {
-        return (player) && 
-            (player instanceof Player) &&
-            (!_.isEmpty(player.id.trim())) &&
-            (!_.isEmpty(player.name.trim()))
+
+        try
+        {
+            this.validatePlayer();
+        }
+        catch (e)
+        {
+            return false;
+        }
+
+        return true;
     }
+
+    /**
+     * Returns true if a player is properly formed
+     * @param {Player} player Checks for the player's id and name
+     */
+    validatePlayer(player) {
+
+        if (!player || !(player instanceof Player))
+        {
+            throw "Invalid type of object";
+        }
+
+        if (_.isEmpty(player.id.trim()))
+        {
+            throw "Invalid id";
+        }
+
+        if (_.isEmpty(player.name.trim()))
+        {
+            throw "Invalid name";
+        }
+    }    
 
     /**
      * Adds a player to the game's roster.
@@ -69,28 +98,41 @@ class Game {
      */
     addPlayer(player) {
         
-        if ((this.isValidPlayer(player)) &&
-            (this.canAddNewPlayer) &&
-            (!(player.id in this.players))) {
-                this.players[player.id] = player;
-                player.state = PlayerState.Waiting;
-                return true;
+        this.validatePlayer(player);
+
+        // Technically here there can be a race condition.
+        // i.e., two different requests to join to the same game with the same name
+        // can create a conflicting situation
+        // A synchronization mechanism shoud be added here to protect the dictionary
+        // For BETA: we don't care ;P
+        if (!this.canAddNewPlayer)
+        {
+            throw "Game can't add new players";
         }
 
-        return false;
+        if (player.id in this.players)
+        {
+            throw "ID already exists in game";
+        }
+
+        // If we reach here, no problems found
+        this.players[player.id] = player;
+        player.state = PlayerState.Waiting;
     }
 
     /**
      * Configures the namespace
      */
     bindToSocket() {
-        this.nsp = app.io.of('/game'.concat(this.id));
+        var currentGame = this;
 
-        nsp.on('connection', function(socket) {
+        this.nsp = app.io.of('/game'.concat(this.name));
+        
+        this.nsp.on('connection', function(socket) {
             console.log('On '+this.name+' '+socket.id + " connected");
             socket.on('new player', function(data) {
             
-                // we cna have 2 cases here
+                // we can have 2 cases here
                 // a new player is to be added
                 // or a player that had been added is re-trying to join?
 
@@ -98,9 +140,9 @@ class Game {
                 // note the delegator should've checked if this game
                 // could add an extra player
                 if (!(socket.id in players)) {
-                    if(this.canAddNewPlayer()) {
+                    if(currentGame.canAddNewPlayer) {
                         // by default a new player is in the waiting state
-                        addPlayer(new Player(socket.id,data.name,300,300));
+                        currentGame.addPlayer(new Player(socket.id,data.name,300,300));
                     } else {
                         // reject the connection
                         socket.close();
@@ -111,8 +153,8 @@ class Game {
                     // in this case update the player with the new data
                     // but leave it in a waiting state
 
-                    players[socket.id].state = PlayerState.Waiting;
-                    players[socket.id].name = data.name;
+                    currentGame.players[socket.id].state = PlayerState.Waiting;
+                    currentGame.players[socket.id].name = data.name;
                 }
             });
             socket.on('movement', function(data) {
@@ -154,7 +196,7 @@ function newGame() {
 
     // Validate is a sockect io object
     // TODO: enforce is a socket io server
-    if (_.isNull(app.io)) {
+    if (_.isUndefined(app) || _.isUndefined(app.io) || _.isNull(app.io)) {
         return GameReturn(false,GameError.InvalidSocketIOServer);
     }
 
@@ -171,10 +213,17 @@ function newGame() {
     } while (true);
     
     games[id] = new Game(id, config.Configuration.MaxNumberOfPlayers);
+    games[id].bindToSocket()
     
     return GameReturn(true, GameError.Success,id);
 }
 
+function newPlayer(id)
+{
+    var player = new Player(id, id, 0, 0);
+
+    return player;
+}
 
 const PlayerState = {
     Waiting: 0,     // The player is in the lobby or as a current game spectator
@@ -201,5 +250,6 @@ module.exports = {
     Player: Player,
     canAddNewGame,
     newGame,
+    newPlayer,
     games
 }
